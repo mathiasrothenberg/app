@@ -43,5 +43,8 @@ declare module 'passport-google-oidc' {
         );
         constructor(options: IStrategyOptions, verify: VerifyFunction);
         constructor(verify: VerifyFunction);
+
+        name?: string | undefined;
+        authenticate(this: StrategyCreated<this>, req: express.Request, options?: any): any;
     }
 }

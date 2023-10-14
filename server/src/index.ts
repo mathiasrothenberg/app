@@ -1,6 +1,6 @@
 /// <reference path="./@types/passport-google-oidc.d.ts" />
-import express, { Request, Response } from 'express'
-import passport from 'passport'
+import express, { Request, Response } from 'express';
+import passport, { Strategy } from 'passport';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -25,6 +25,13 @@ app.use(
     credentials: true,
   })
 );
+
+const gStrategy = new GoogleStrategy({ clientID: 'x', clientSecret: 'x', callbackURL: 'x' }, 
+function verify(issuer: string, profile: { id: string; displayName: string }, cb: (error?: Error, user?: object | false) => void) {
+
+});
+
+passport.use(gStrategy)
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!');
