@@ -13,7 +13,6 @@ const CLIENT_URL = "http://localhost:3000/";
 const app = express();
 const PORT = 5000;
 
-app.use(cookieParser());
 app.use(session({
   secret: 'my-secret',
   resave: false,
@@ -22,6 +21,7 @@ app.use(session({
  
 app.use(passport.initialize());
 app.use(passport.session())
+
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -34,24 +34,28 @@ passport.use(new GoogleStrategy(
   { 
     clientID: process.env['GOOGLE_CLIENT_ID'] as string,
     clientSecret: process.env['GOOGLE_CLIENT_SECRET'] as string,
-    callbackURL: process.env['GOOGLE_CALLBACK'] as string
+    callbackURL: 'http://localhost:5000/auth/google/callback'
   }, 
-function verify(issuer: string, profile: { id: string; displayName: string }, cb: (error?: Error, user?: object | false) => void) {
-
+function verify(issuer: string, profile: { id: string; displayName: string }, done: (error?: Error, user?: object | false) => void) {
+  console.log("profile: ", profile)
+  console.log("issuer: ", issuer)
+  done(undefined, profile)
 }));
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(user: Express.User | null | false | undefined, done) {
+  done(null, user);
+});
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Hello World!');
 });
 
-app.get('/auth/google/', passport.authenticate('google', { scope: ["profile"], failureRedirect: '/auth/login', successRedirect: '/' }));
-app.get(
-  "/oauth/google/callback",
-  passport.authenticate("google", {
-    successRedirect: CLIENT_URL,
-    failureRedirect: "/auth/login/failed",
-  })
-);
+app.get('/auth/google/', passport.authenticate('google', { scope: ["profile", "email"] }));
+app.get("/auth/google/callback", passport.authenticate("google", { successRedirect: CLIENT_URL, failureRedirect: "/auth/login/failed", }));
 
 app.use((err: any, req: Request, res: Response, next: Function) => {
   console.error(err.stack)
@@ -68,11 +72,9 @@ app.get("/auth/login/success", (req, res) => {
     });
   }
 });
-app.get("/auth/login/failed", (req, res) => {
-  res.status(401).json({
-    success: false,
-    message: "failure",
-  });
+app.get("/auth/login/failed", (req: Request, res: Response) => {
+  console.log("/auth/login/failed")
+  res.status(401).json({ "status": "error" });
 });
 app.get("/auth/logout", (req: Request, res: Response) => {
   req.logout({ keepSessionInfo: false }, () => {})
